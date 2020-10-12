@@ -27,17 +27,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GetIt StreamBuilder Issues',
-      home: Scaffold(body: SafeArea(child: CounterApp())),
+      home: Scaffold(body: SafeArea(child: StreamBuilderHotReloadIssue())),
     );
   }
 }
 
-class CounterApp extends StatefulWidget with GetItStatefulWidgetMixin {
+class StreamBuilderHotReloadIssue extends StatefulWidget {
   @override
-  _CounterAppState createState() => _CounterAppState();
+  _StreamBuilderHotReloadIssueState createState() =>
+      _StreamBuilderHotReloadIssueState();
 }
 
-class _CounterAppState extends State<CounterApp> with GetItStateMixin {
+class _StreamBuilderHotReloadIssueState
+    extends State<StreamBuilderHotReloadIssue> {
   static StreamController<int> counterController = StreamController<int>();
   Stream<int> counter = counterController.stream;
 
@@ -50,16 +52,78 @@ class _CounterAppState extends State<CounterApp> with GetItStateMixin {
   }
 
   @override
+  void dispose() {
+    counterController.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // This widget does not rebuild!!
         GetItCounterOutsideStreamBuilder(),
         StreamBuilder(
           stream: counter,
           builder: (context, snapshot) {
             print('Build Stream');
             if (!snapshot.hasData) return SizedBox.shrink();
+            int counterValue = snapshot.data as int;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Stream Counter: ' + counterValue.toString()),
+                GetItCounterInStreamBuilder(),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class StreamBuilderRebuildIssue extends StatefulWidget
+    with GetItStatefulWidgetMixin {
+  @override
+  _StreamBuilderRebuildIssueState createState() =>
+      _StreamBuilderRebuildIssueState();
+}
+
+class _StreamBuilderRebuildIssueState extends State<StreamBuilderRebuildIssue>
+    with GetItStateMixin {
+  static StreamController<int> counterController = StreamController<int>();
+  Stream<int> counter = counterController.stream;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: 1000), () {
+      counterController.add(1);
+    });
+    Future.delayed(Duration(milliseconds: 1000), () {
+      counterController.add(2);
+    });
+  }
+
+  @override
+  void dispose() {
+    counterController.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        GetItCounterOutsideStreamBuilder(),
+        StreamBuilder(
+          stream: counter,
+          builder: (context, snapshot) {
+            print('Build Stream');
+            if (!snapshot.hasData) return SizedBox.shrink();
+            // This line breaks outside WatchX rebuilds.
+            // Removing it allows WatchX to rebuild correctly.
+            if (snapshot.data == 1) return Text('Empty');
             int counterValue = snapshot.data as int;
             return Column(
               mainAxisSize: MainAxisSize.min,
