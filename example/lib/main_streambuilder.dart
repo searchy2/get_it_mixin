@@ -6,7 +6,7 @@ import 'package:get_it/get_it.dart';
 import 'package:get_it_mixin/get_it_mixin.dart';
 
 class GetItSteamBuilderIssueModel extends ChangeNotifier {
-  ValueNotifier<String> getItCounter = ValueNotifier('0');
+  ValueNotifier<int> getItCounter = ValueNotifier(0);
 }
 
 final GetIt g = GetIt.instance;
@@ -47,15 +47,13 @@ class _CounterAppState extends State<CounterApp> with GetItStateMixin {
     Future.delayed(Duration(milliseconds: 1000), () {
       counterController.add(1);
     });
-    Future.delayed(Duration(milliseconds: 2000), () {
-      counterController.add(2);
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // This widget does not rebuild!!
         GetItCounterOutsideStreamBuilder(),
         StreamBuilder(
           stream: counter,
@@ -63,11 +61,6 @@ class _CounterAppState extends State<CounterApp> with GetItStateMixin {
             print('Build Stream');
             if (!snapshot.hasData) return SizedBox.shrink();
             int counterValue = snapshot.data as int;
-            if (snapshot.data == 1)
-              return Container(
-                  height: 300,
-                  alignment: Alignment.center,
-                  child: CupertinoActivityIndicator());
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -98,7 +91,7 @@ class _GetItCounterInStreamBuilderState
 
   @override
   Widget build(BuildContext context) {
-    String getItCounter =
+    int getItCounter =
         watchX((GetItSteamBuilderIssueModel model) => model.getItCounter);
     return Column(
       children: [
@@ -106,7 +99,7 @@ class _GetItCounterInStreamBuilderState
         RaisedButton(
             onPressed: () {
               print('Update GetItCounterInStreamBuilder');
-              g.get<GetItSteamBuilderIssueModel>().getItCounter.value = '2';
+              g.get<GetItSteamBuilderIssueModel>().getItCounter.value += 1;
             },
             child: Text('Update GetIt Counter'))
       ],
@@ -130,7 +123,7 @@ class _GetItCounterOutsideStreamBuilderState
 
   @override
   Widget build(BuildContext context) {
-    String getItCounter =
+    int getItCounter =
         watchX((GetItSteamBuilderIssueModel model) => model.getItCounter);
     return Column(
       children: [
@@ -138,7 +131,7 @@ class _GetItCounterOutsideStreamBuilderState
         RaisedButton(
             onPressed: () {
               print('Update GetItCounterOutsideStreamBuilder');
-              g.get<GetItSteamBuilderIssueModel>().getItCounter.value = '1';
+              g.get<GetItSteamBuilderIssueModel>().getItCounter.value += 1;
             },
             child: Text('Update GetIt Counter')),
       ],
