@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GetIt StreamBuilder Issues',
-      home: Scaffold(body: SafeArea(child: StreamBuilderHotReloadIssue())),
+      home: Scaffold(body: SafeArea(child: StreamBuilderRebuildIssue())),
     );
   }
 }
@@ -100,7 +100,8 @@ class _StreamBuilderRebuildIssueState extends State<StreamBuilderRebuildIssue>
     Future.delayed(Duration(milliseconds: 1000), () {
       counterController.add(1);
     });
-    Future.delayed(Duration(milliseconds: 1000), () {
+    // This triggers a StreamBuilder rebuild and breaks WatchX.
+    Future.delayed(Duration(milliseconds: 2000), () {
       counterController.add(2);
     });
   }
@@ -115,21 +116,18 @@ class _StreamBuilderRebuildIssueState extends State<StreamBuilderRebuildIssue>
   Widget build(BuildContext context) {
     return Column(
       children: [
-        GetItCounterOutsideStreamBuilder(),
         StreamBuilder(
           stream: counter,
           builder: (context, snapshot) {
             print('Build Stream');
             if (!snapshot.hasData) return SizedBox.shrink();
-            // This line breaks outside WatchX rebuilds.
-            // Removing it allows WatchX to rebuild correctly.
-            if (snapshot.data == 1) return Text('Empty');
             int counterValue = snapshot.data as int;
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('Stream Counter: ' + counterValue.toString()),
                 GetItCounterInStreamBuilder(),
+                GetItCounterOutsideStreamBuilder(),
               ],
             );
           },
